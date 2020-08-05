@@ -395,6 +395,7 @@ sys_C_Initialize (CK_VOID_PTR init_args)
 		 */
 		} else if (rv == CKR_OK) {
 			p11_debug ("doing initialization");
+            char *paths;
 
 			if (args->pReserved)
 				p11_argv_parse ((const char*)args->pReserved, parse_argument, NULL);
@@ -404,8 +405,12 @@ sys_C_Initialize (CK_VOID_PTR init_args)
 			                            NULL, p11_session_free);
 
 			gl.tokens = p11_array_new ((p11_destroyer)p11_token_free);
-			if (gl.tokens && !create_tokens_inlock (gl.tokens, gl.paths ? gl.paths : TRUST_PATHS))
-				gl.tokens = NULL;
+            paths = secure_getenv("P11_TRUST_PATHS");
+            if (!paths)
+                paths = gl.paths ? gl.paths : TRUST_PATHS;
+
+            if (gl.tokens && !create_tokens_inlock (gl.tokens, (const char*)paths))
+                gl.tokens = NULL;
 
 			if (gl.sessions == NULL || gl.tokens == NULL) {
 				warn_if_reached ();
